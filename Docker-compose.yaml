@@ -1,0 +1,48 @@
+###########
+# 도커 컴포즈 버전
+###########
+version: '3'
+
+###########
+# services: 도커가 컨테이너들의 모음
+# web1, web2: web서버 등록 [서버 이중화를 위해 두개의 서버를 등록]
+# nginx: Nginx 서버를 지정
+##########
+services:
+
+  ######
+  # build: Dockerfile의 위치
+  # container_name: 컨테이너 명칭 [--name 옵션]
+  # command: 컨테이너 실행시 실행할 명령어 지정 [Dockerfile의 cmd/entrypoint 명령어 동일]
+  # ports: 실행 시 포트 매핑 [-p 옵션]
+  ######
+  web1:
+    build: ./django
+    container_name: django_server_master
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+
+  web2:
+    build: ./django
+    container_name: django_server_slave
+    command: python manage.py runserver 0.0.0.0:8001
+    ports:
+      - "8001:8001"
+
+  #####
+  # image: Nginx 이미지를 사용하여 컨테이너 실행한다는 것을 나타낸다.
+  # ports: Nginx 구동시 80 포트로 연결
+  # volumes: nginx.conf 파일 마운트
+  # depends_on: 해당 서비스가 의존하는 다른 서비스를 지정하는 명령어
+  #####
+  nginx:
+    image: nginx
+    container_name: django_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - web1
+      - web2
